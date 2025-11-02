@@ -22,13 +22,9 @@ class Collector;
 void RunKernel(sycl::queue& queue,
 	const char* queries_ptr,
 	const HostSizeType* querySizes_ptr,
-	const HostSizeType numberOfQueries,
 	const Chunk* ibfData_ptr,
-	const HostSizeType binSize,
-	const HostSizeType hashShift,
-	const HostSizeType minimalNumberOfMinimizers,
-	const HostSizeType maximalNumberOfMinimizers,
 	const HostSizeType* thresholds_ptr,
+	kernelData* kData_ptr,
 	Chunk* result_ptr,
 	std::vector<sycl::event>& kernelEvents)
 {
@@ -37,6 +33,12 @@ void RunKernel(sycl::queue& queue,
 	using CollectorPipes = fpga_tools::PipeArray<class CollectorPipe, Chunk, 25, KERNEL_COPYS>;
 
 	using PrefetchingLSU = sycl::ext::intel::lsu<sycl::ext::intel::prefetch<true>, sycl::ext::intel::statically_coalesce<false>>;
+
+	const HostSizeType numberOfQueries = kData_ptr->numberOfQueries;
+	const HostSizeType binSize = kData_ptr->binSize;
+	const HostSizeType hashShift = kData_ptr->hashShift;
+	const HostSizeType minimalNumberOfMinimizers = kData_ptr->minimalNumberOfMinimizers;
+	const HostSizeType maximalNumberOfMinimizers = kData_ptr->maximalNumberOfMinimizers;
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{

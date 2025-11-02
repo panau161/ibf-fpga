@@ -27,6 +27,7 @@
 template <size_t chunk_bits>
 int RunHost() {
   using HostSizeType = min_ibf_fpga::backend_sycl::HostSizeType;
+  using kernelData = min_ibf_fpga::backend_sycl::kernelData;
   using Chunk = ac_int<chunk_bits, false>;
 
   static_assert(sizeof(size_t) == 8);
@@ -40,11 +41,12 @@ int RunHost() {
   size_t const kmers_per_window = window_size - kmer_size + 1;
   size_t const kmers_per_pattern = pattern_size - kmer_size + 1;
 
-  size_t const bin_size = 1024; // The size of each bin in bits.
-  size_t const hash_shift = 53; // The number of bits to shift the hash value before doing multiplicative hashing.
-  size_t const minimalNumberOfMinimizers = kmers_per_window == 1 ? kmers_per_pattern : std::ceil(static_cast<double>(kmers_per_pattern) / static_cast<double>(kmers_per_window));
-  size_t const maximalNumberOfMinimizers = pattern_size - window_size + 1;
-  size_t const thresholds_max_index = maximalNumberOfMinimizers - minimalNumberOfMinimizers;
+  kernelData kData;
+
+  kData.binSize = 1024; // The size of each bin in bits
+  kData.hashShift = 53; // The number of bits to shift the hash value before doing multiplicative hashing
+  kData.minimalNumberOfMinimizers = kmers_per_window == 1 ? kmers_per_pattern : std::ceil(static_cast<double>(kmers_per_pattern) / static_cast<double>(kmers_per_window));
+  kData.maximalNumberOfMinimizers = pattern_size - window_size + 1;
 
   std::string queries_filename = "query.fq";
   std::string query, id;
@@ -53,6 +55,7 @@ int RunHost() {
   std::vector<HostSizeType> querySizes;
   std::ifstream queries_ifs(queries_filename, std::ios::binary);
 
+  HostSizeType const thresholds_max_index = kData.maximalNumberOfMinimizers - kData.minimalNumberOfMinimizers;
   if (thresholds_max_index >= THRESHOLDS_CACHE_SIZE) {
     std::cerr << "Error: THRESHOLDS_CACHE_SIZE too low" << std::endl;
     std::terminate();
@@ -70,6 +73,8 @@ int RunHost() {
     querySizes.push_back(query.size());
   });
 
+  kData.numberOfQueries = querySizes.size();
+
   std::vector<Chunk> ibfData;
   {
     std::string ibfData_filename = "ibfdata.bin";
@@ -85,7 +90,7 @@ int RunHost() {
   }
 
   std::vector<Chunk> results;
-  results.resize(querySizes.size()); // numberOfQueries
+  results.resize(kData.numberOfQueries);
 
 #if __INTEL_LLVM_COMPILER < 20230100
   #ifdef FPGA_EMULATOR
@@ -125,12 +130,15 @@ int RunHost() {
     static_assert(std::is_same_v<decltype(queries_host_ptr), char *>);
     std::memcpy(queries_host_ptr, queries.data(), queries.size() * sizeof(char));
 
-    auto querySizes_host_ptr = sycl::malloc_host<HostSizeType>(querySizes.size(), q);
+    auto querySizes_host_ptr = sycl::malloc_host<HostSizeType>(kData.numberOfQueries, q);
     static_assert(std::is_same_v<decltype(querySizes_host_ptr), HostSizeType *>);
-    std::memcpy(querySizes_host_ptr, querySizes.data(), querySizes.size() * sizeof(HostSizeType));
+    std::memcpy(querySizes_host_ptr, querySizes.data(), static_cast<size_t>(kData.numberOfQueries) * sizeof(HostSizeType));
 
     auto results_host_ptr = sycl::malloc_host<Chunk>(results.size(), q);
     static_assert(std::is_same_v<decltype(results_host_ptr), Chunk *>);
+
+    kernelData* kData_ptr = sycl::malloc_shared<kernelData>(1, q);
+    *kData_ptr = kData;
 
     std::vector<sycl::event> events;
 
@@ -148,13 +156,9 @@ int RunHost() {
       sycl::queue&,
       const char*,
       const HostSizeType*,
-      const HostSizeType,
       const Chunk*,
-      const HostSizeType,
-      const HostSizeType,
-      const HostSizeType,
-      const HostSizeType,
       const HostSizeType*,
+      const kernelData*,
       Chunk*,
       std::vector<sycl::event>&
       ))dlsym(kernel_lib, "RunKernel");
@@ -165,13 +169,9 @@ int RunHost() {
     RunKernel(q,
       queries_host_ptr,
       querySizes_host_ptr,
-      querySizes.size(), // numberOfQueries
       ibfData_device_ptr,
-      bin_size,
-      hash_shift,
-      minimalNumberOfMinimizers,
-      maximalNumberOfMinimizers,
       thresholds_device_ptr,
+      kData_ptr,
       results_host_ptr,
       events);
 
@@ -189,6 +189,7 @@ int RunHost() {
     sycl::free(querySizes_host_ptr, q);
     sycl::free(ibfData_device_ptr, q);
     sycl::free(thresholds_device_ptr, q);
+    sycl::free(kData_ptr, q);
     sycl::free(results_host_ptr, q);
 
 #ifdef DEBUG

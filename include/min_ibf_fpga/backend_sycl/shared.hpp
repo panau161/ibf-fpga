@@ -22,4 +22,12 @@ namespace min_ibf_fpga::backend_sycl
 
 using HostSizeType = ac_int<HOST_SIZE_TYPE_BITS, false>;
 
+struct kernelData {
+  HostSizeType numberOfQueries;
+  HostSizeType binSize;
+  HostSizeType hashShift;
+  HostSizeType minimalNumberOfMinimizers;
+  HostSizeType maximalNumberOfMinimizers;
+};
+
 } // namespace min_ibf_fpga::backend_sycl

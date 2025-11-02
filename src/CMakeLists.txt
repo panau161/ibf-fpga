@@ -22,7 +22,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURC
 add_executable(${EMULATOR_TARGET} ${HOST_SOURCE_FILE})
 target_include_directories(${EMULATOR_TARGET} PRIVATE ${INCLUDE_PATH})
 target_compile_definitions(${EMULATOR_TARGET} PRIVATE -DFPGA_EMULATOR)
-target_compile_options(${EMULATOR_TARGET} PRIVATE ${COMMON_COMPILE_FLAGS} ${EMULATOR_AC_INT_FLAG})
+target_compile_options(${EMULATOR_TARGET} PRIVATE ${COMMON_COMPILE_FLAGS} -g -O0 ${EMULATOR_AC_INT_FLAG})
 target_link_options(${EMULATOR_TARGET} PRIVATE ${COMMON_LINK_FLAGS} ${EMULATOR_AC_INT_FLAG})
 
 build_kernels_emulator()

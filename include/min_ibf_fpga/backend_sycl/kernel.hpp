@@ -122,13 +122,9 @@ extern "C"
 	void RunKernel(sycl::queue& queue,
 		const char* queries_ptr,
 		const HostSizeType* querySizes_ptr,
-		const HostSizeType numberOfQueries,
 		const Chunk* ibfData_ptr,
-		const HostSizeType binSize,
-		const HostSizeType hashShift,
-		const HostSizeType minimalNumberOfMinimizers,
-		const HostSizeType maximalNumberOfMinimizers,
 		const HostSizeType* thresholds_ptr,
+		kernelData* kData_ptr,
 		Chunk* result_ptr,
 		std::vector<sycl::event>& kernelEvents);
 }
