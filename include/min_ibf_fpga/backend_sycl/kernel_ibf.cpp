@@ -12,7 +12,7 @@
 					thresholds[i] = thresholds_ptr_casted[i];
 				}
 
-				for (QueryIndex queryIndex = 0; queryIndex < localNumberOfQueries; queryIndex++)
+				for (QueryIndex queryIndex = 0; queryIndex < numberOfQueries; queryIndex++)
 				{
 					[[intel::fpga_register]] Counter counters[CHUNKS][CHUNK_BITS];
 

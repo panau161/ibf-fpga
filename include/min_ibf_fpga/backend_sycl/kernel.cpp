@@ -2,7 +2,6 @@
 
 // Utilities
 #include "pipe_utils.hpp"
-#include "unrolled_loop.hpp"
 
 // Kernel includes
 #include "kernel.hpp"
@@ -39,29 +38,22 @@ void RunKernel(sycl::queue& queue,
 	const HostSizeType hashShift = kData_ptr->hashShift;
 	const HostSizeType minimalNumberOfMinimizers = kData_ptr->minimalNumberOfMinimizers;
 	const HostSizeType maximalNumberOfMinimizers = kData_ptr->maximalNumberOfMinimizers;
+	const size_t id = 0;
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{
 		#include "distributor.cpp"
 	}) );
 
-	fpga_tools::UnrolledLoop<KERNEL_COPYS>([&](auto id)
+	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{
-		QueryIndex localNumberOfQueries = numberOfQueries / KERNEL_COPYS;
-		QueryIndex remainder = numberOfQueries % KERNEL_COPYS;
+		#include "kernel_minimizer.cpp"
+	}) );
 
-		if (remainder > id) localNumberOfQueries++;
-
-		kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
-		{
-			#include "kernel_minimizer.cpp"
-		}) );
-
-		kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
-		{
-			#include "kernel_ibf.cpp"
-		}) );
-	});
+	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
+	{
+		#include "kernel_ibf.cpp"
+	}) );
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{

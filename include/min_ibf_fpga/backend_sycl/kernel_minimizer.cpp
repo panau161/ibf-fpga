@@ -1,6 +1,6 @@
 			handler.single_task<MinimizerKernel<id>>([=]() [[intel::kernel_args_restrict]]
 			{
-				for (QueryIndex queryIndex = 0; queryIndex < localNumberOfQueries; queryIndex++)
+				for (QueryIndex queryIndex = 0; queryIndex < numberOfQueries; queryIndex++)
 				{
 					DistributorToMinimizerData query;
 					query = DistributorPipes::PipeAt<id>::read();

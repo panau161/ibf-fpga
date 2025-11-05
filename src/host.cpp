@@ -36,7 +36,7 @@ int RunHost() {
   size_t const kmer_size = 19;
   size_t const number_of_bins = 64;
   size_t const pattern_size = 65;
-  size_t const kernel_copys = 2;
+  size_t const kernel_copys = 1;
 
   size_t const kmers_per_window = window_size - kmer_size + 1;
   size_t const kmers_per_pattern = pattern_size - kmer_size + 1;

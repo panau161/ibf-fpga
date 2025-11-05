@@ -22,8 +22,8 @@ macro(set_default_variables)
     endif()
 
     if(NOT DEFINED KERNEL_COPYS_LIST)
-        message("No KERNEL_COPYS_LIST supplied. Defaulting to '1;2'.")
-        set(KERNEL_COPYS_LIST "1;2")
+        message("No KERNEL_COPYS_LIST supplied. Defaulting to '1'.")
+        set(KERNEL_COPYS_LIST "1")
     endif()
 
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 2022)
