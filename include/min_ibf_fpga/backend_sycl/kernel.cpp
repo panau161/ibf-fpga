@@ -1,6 +1,7 @@
 #include <sycl/ext/intel/fpga_extensions.hpp>
 
 // Utilities
+#include "autorun.hpp"
 #include "pipe_utils.hpp"
 
 // Kernel includes
@@ -98,37 +99,15 @@ void RunKernel(sycl::queue& queue,
 		});
 	}) );
 
-	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
-	{
-		handler.single_task<Distributor>([=]() [[intel::kernel_args_restrict]]
-		{
-			#include "distributor.cpp"
-		});
-	}) );
+	#include "distributor.cpp"
+	#include "kernel_minimizer.cpp"
+	#include "kernel_ibf.cpp"
+	#include "collector.cpp"
 
-	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
-	{
-		handler.single_task<MinimizerKernel<id>>([=]() [[intel::kernel_args_restrict]]
-		{
-			#include "kernel_minimizer.cpp"
-		});
-	}) );
-
-	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
-	{
-		handler.single_task<IbfKernel<id>>([=]() [[intel::kernel_args_restrict]]
-		{
-			#include "kernel_ibf.cpp"
-		});
-	}) );
-
-	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
-	{
-		handler.single_task<Collector>([=]() [[intel::kernel_args_restrict]]
-		{
-			#include "collector.cpp"
-		});
-	}) );
+	fpga_tools::Autorun<Distributor> d_kernel{device_selector, Distributor{}};
+	fpga_tools::Autorun<MinimizerKernel> m_kernel{device_selector, MinimizerKernel{}};
+	fpga_tools::Autorun<IbfKernel> ibf_kernel{device_selector, IbfKernel{}};
+	fpga_tools::Autorun<Collector> c_kernel{device_selector, Collector{}};
 }
 
 } // namespace min_ibf_fpga::backend_sycl
