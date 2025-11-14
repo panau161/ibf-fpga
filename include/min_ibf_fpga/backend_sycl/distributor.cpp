@@ -2,8 +2,8 @@
 		{
 			InterfaceToDistributorData distributorData = InterfaceToDistributorPipe::read();
 
-			sycl::ext::intel::host_ptr<const char> queries_ptr_casted(distributorData.queries_ptr);
-			sycl::ext::intel::host_ptr<const HostSizeType> querySizes_ptr_casted(distributorData.querySizes_ptr);
+			sycl::ext::intel::device_ptr<const char> queries_ptr_casted(distributorData.queries_ptr);
+			sycl::ext::intel::device_ptr<const HostSizeType> querySizes_ptr_casted(distributorData.querySizes_ptr);
 
 			size_t queries_ptr_index = 0;
 

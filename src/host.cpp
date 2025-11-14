@@ -118,29 +118,29 @@ int RunHost() {
     sycl::queue q(device_selector, fpga_tools::exception_handler);
 
     // Malloc on device and transfer data
-    auto ibfData_device_ptr = sycl::malloc_device<Chunk>(ibfData.size(), q);
-    static_assert(std::is_same_v<decltype(ibfData_device_ptr), Chunk *>);
-    q.memcpy(ibfData_device_ptr, ibfData.data(), ibfData.size() * sizeof(Chunk));
+    auto ibfData_ptr = sycl::malloc_shared<Chunk>(ibfData.size(), q);
+    static_assert(std::is_same_v<decltype(ibfData_ptr), Chunk *>);
+    std::memcpy(ibfData_ptr, ibfData.data(), ibfData.size() * sizeof(Chunk));
 
-    auto thresholds_device_ptr = sycl::malloc_device<HostSizeType>(thresholds.size(), q);
-    static_assert(std::is_same_v<decltype(thresholds_device_ptr), HostSizeType *>);
-    q.memcpy(thresholds_device_ptr, thresholds.data(), thresholds.size() * sizeof(HostSizeType));
+    auto thresholds_ptr = sycl::malloc_shared<HostSizeType>(thresholds.size(), q);
+    static_assert(std::is_same_v<decltype(thresholds_ptr), HostSizeType *>);
+    std::memcpy(thresholds_ptr, thresholds.data(), thresholds.size() * sizeof(HostSizeType));
 
-    auto queries_host_ptr = sycl::malloc_host<char>(queries.size(), q);
-    static_assert(std::is_same_v<decltype(queries_host_ptr), char *>);
-    std::memcpy(queries_host_ptr, queries.data(), queries.size() * sizeof(char));
+    auto queries_ptr = sycl::malloc_shared<char>(queries.size(), q);
+    static_assert(std::is_same_v<decltype(queries_ptr), char *>);
+    std::memcpy(queries_ptr, queries.data(), queries.size() * sizeof(char));
 
-    auto querySizes_host_ptr = sycl::malloc_host<HostSizeType>(kData.numberOfQueries, q);
-    static_assert(std::is_same_v<decltype(querySizes_host_ptr), HostSizeType *>);
-    std::memcpy(querySizes_host_ptr, querySizes.data(), static_cast<size_t>(kData.numberOfQueries) * sizeof(HostSizeType));
+    auto querySizes_ptr = sycl::malloc_shared<HostSizeType>(kData.numberOfQueries, q);
+    static_assert(std::is_same_v<decltype(querySizes_ptr), HostSizeType *>);
+    std::memcpy(querySizes_ptr, querySizes.data(), static_cast<size_t>(kData.numberOfQueries) * sizeof(HostSizeType));
 
-    auto results_host_ptr = sycl::malloc_host<Chunk>(results.size(), q);
-    static_assert(std::is_same_v<decltype(results_host_ptr), Chunk *>);
+    auto results_ptr = sycl::malloc_shared<Chunk>(results.size(), q);
+    static_assert(std::is_same_v<decltype(results_ptr), Chunk *>);
 
     kernelData* kData_ptr = sycl::malloc_shared<kernelData>(1, q);
     *kData_ptr = kData;
 
-    std::vector<sycl::event> events;
+    std::vector<sycl::event> events = {};
 
 #if FPGA_HARDWARE
     std::string library_suffix = ".fpga.so";
@@ -167,12 +167,12 @@ int RunHost() {
 
     // The definition of this function is in a different compilation unit, so host and device code can be separately compiled.
     RunKernel(q,
-      queries_host_ptr,
-      querySizes_host_ptr,
-      ibfData_device_ptr,
-      thresholds_device_ptr,
+      queries_ptr,
+      querySizes_ptr,
+      ibfData_ptr,
+      thresholds_ptr,
       kData_ptr,
-      results_host_ptr,
+      results_ptr,
       events);
 
     std::cerr << "Waiting for " << events.size() << " events." << std::endl;
@@ -180,17 +180,17 @@ int RunHost() {
     for (sycl::event e : events)
       e.wait();
 
-    // Copy back results (could probably skip that and use results_host_ptr directly)
-    q.memcpy(results.data(), results_host_ptr, results.size() * sizeof(Chunk));
+    q.wait();
 
-    q.wait(); // Wait for results to be copied back before freeing device memory
+    // Copy results from SYCL context to non-SYCL context
+    std::memcpy(results.data(), results_ptr, results.size() * sizeof(Chunk));
 
-    sycl::free(queries_host_ptr, q);
-    sycl::free(querySizes_host_ptr, q);
-    sycl::free(ibfData_device_ptr, q);
-    sycl::free(thresholds_device_ptr, q);
+    sycl::free(queries_ptr, q);
+    sycl::free(querySizes_ptr, q);
+    sycl::free(ibfData_ptr, q);
+    sycl::free(thresholds_ptr, q);
     sycl::free(kData_ptr, q);
-    sycl::free(results_host_ptr, q);
+    sycl::free(results_ptr, q);
 
 #ifdef DEBUG
   }

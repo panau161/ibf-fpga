@@ -2,7 +2,7 @@
 		{
 			InterfaceToCollectorData collectorData = InterfaceToCollectorPipe::read();
 
-			sycl::ext::intel::host_ptr<Chunk> result_ptr_casted(collectorData.result_ptr);
+			sycl::ext::intel::device_ptr<Chunk> result_ptr_casted(collectorData.result_ptr);
 
 			for (QueryIndex queryIndex = 0; queryIndex < static_cast<QueryIndex>(collectorData.numberOfQueries); queryIndex++)
 			{
