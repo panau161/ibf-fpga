@@ -1,5 +1,3 @@
-			handler.single_task<MinimizerKernel<id>>([=]() [[intel::kernel_args_restrict]]
-			{
 				QueryIndex numberOfQueries = InterfaceToMinimizerPipe::read();
 
 				for (QueryIndex queryIndex = 0; queryIndex < numberOfQueries; queryIndex++)
@@ -60,4 +58,3 @@
 							--lastMinimizer.position;
 					}
 				}
-			});

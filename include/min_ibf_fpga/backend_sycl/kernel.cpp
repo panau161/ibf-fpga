@@ -100,22 +100,34 @@ void RunKernel(sycl::queue& queue,
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{
-		#include "distributor.cpp"
+		handler.single_task<Distributor>([=]() [[intel::kernel_args_restrict]]
+		{
+			#include "distributor.cpp"
+		});
 	}) );
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{
-		#include "kernel_minimizer.cpp"
+		handler.single_task<MinimizerKernel<id>>([=]() [[intel::kernel_args_restrict]]
+		{
+			#include "kernel_minimizer.cpp"
+		});
 	}) );
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{
-		#include "kernel_ibf.cpp"
+		handler.single_task<IbfKernel<id>>([=]() [[intel::kernel_args_restrict]]
+		{
+			#include "kernel_ibf.cpp"
+		});
 	}) );
 
 	kernelEvents.push_back( queue.submit([&](sycl::handler &handler)
 	{
-		#include "collector.cpp"
+		handler.single_task<Collector>([=]() [[intel::kernel_args_restrict]]
+		{
+			#include "collector.cpp"
+		});
 	}) );
 }
 

@@ -1,5 +1,3 @@
-		handler.single_task<Collector>([=]() [[intel::kernel_args_restrict]]
-		{
 			InterfaceToCollectorData collectorData = InterfaceToCollectorPipe::read();
 
 			sycl::ext::intel::device_ptr<Chunk> result_ptr_casted(collectorData.result_ptr);
@@ -39,4 +37,3 @@
 			}
 			// Signal finished to interface kernel
 			CollectorToInterfacePipe::write(true);
-		});

@@ -1,5 +1,3 @@
-		handler.single_task<Distributor>([=]() [[intel::kernel_args_restrict]]
-		{
 			InterfaceToDistributorData distributorData = InterfaceToDistributorPipe::read();
 
 			sycl::ext::intel::device_ptr<const char> queries_ptr_casted(distributorData.queries_ptr);
@@ -40,4 +38,3 @@
 #endif
 				}
 			}
-		});

@@ -1,5 +1,3 @@
-			handler.single_task<IbfKernel<id>>([=]() [[intel::kernel_args_restrict]]
-			{
 				InterfaceToIBFData ibfData = InterfaceToIBFPipe::read();
 
 				sycl::ext::intel::device_ptr<const HostSizeType> thresholds_ptr_casted(ibfData.thresholds_ptr);
@@ -83,4 +81,3 @@
 					}
 					while(!data.isLastElement);
 				}
-			});
