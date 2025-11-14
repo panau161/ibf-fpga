@@ -37,4 +37,6 @@
 					result_ptr_casted[static_cast<size_t>(queryIndex * CHUNKS + chunkIndex)] = chunk;
 				}
 			}
+			// Signal finished to interface kernel
+			CollectorToInterfacePipe::write(true);
 		});

@@ -53,6 +53,7 @@ void RunKernel(sycl::queue& queue,
 	using InterfaceToMinimizerPipe = sycl::pipe<class I2M, HostSizeType, 1>;
 	using InterfaceToIBFPipe = sycl::pipe<class I2IBF, InterfaceToIBFData, 1>;
 	using InterfaceToCollectorPipe = sycl::pipe<class I2C, InterfaceToCollectorData, 1>;
+	using CollectorToInterfacePipe = sycl::pipe<class C2I, bool, 1>;
 
 	using DistributorPipes = fpga_tools::PipeArray<class DistributorPipe, DistributorToMinimizerData, 2, KERNEL_COPYS>;
 	using MinimizerToIBFPipes = fpga_tools::PipeArray<class MinimizerToIBFPipe, MinimizerToIBFData, 25, KERNEL_COPYS>;
@@ -92,7 +93,8 @@ void RunKernel(sycl::queue& queue,
 
 			InterfaceToCollectorPipe::write(collectorData);
 
-			// TODO: Wait for Collector to finish
+			// Wait for the collector to finish
+			CollectorToInterfacePipe::read();
 		});
 	}) );
 
