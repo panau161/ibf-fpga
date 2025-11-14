@@ -1,3 +1,8 @@
+#include "kernel.hpp"
+
+namespace min_ibf_fpga::backend_sycl
+{
+
 struct Collector
 {
 	void operator()() const
@@ -43,3 +48,5 @@ struct Collector
 		CollectorToInterfacePipe::write(true);
 	}
 };
+
+} // namespace min_ibf_fpga::backend_sycl

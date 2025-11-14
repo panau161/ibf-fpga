@@ -1,3 +1,8 @@
+#include "kernel.hpp"
+
+namespace min_ibf_fpga::backend_sycl
+{
+
 struct Distributor
 {
 	void operator()() const
@@ -44,3 +49,5 @@ struct Distributor
 		}
 	}
 };
+
+} // namespace min_ibf_fpga::backend_sycl
