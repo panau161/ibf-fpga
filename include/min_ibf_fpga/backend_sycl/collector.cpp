@@ -1,8 +1,10 @@
 		handler.single_task<Collector>([=]() [[intel::kernel_args_restrict]]
 		{
-			sycl::ext::intel::host_ptr<Chunk> result_ptr_casted(result_ptr);
+			InterfaceToCollectorData collectorData = InterfaceToCollectorPipe::read();
 
-			for (QueryIndex queryIndex = 0; queryIndex < static_cast<QueryIndex>(numberOfQueries); queryIndex++)
+			sycl::ext::intel::host_ptr<Chunk> result_ptr_casted(collectorData.result_ptr);
+
+			for (QueryIndex queryIndex = 0; queryIndex < static_cast<QueryIndex>(collectorData.numberOfQueries); queryIndex++)
 			{
 				unsigned char pipeIndex = queryIndex % KERNEL_COPYS;
 

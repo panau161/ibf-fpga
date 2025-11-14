@@ -1,18 +1,20 @@
 			handler.single_task<IbfKernel<id>>([=]() [[intel::kernel_args_restrict]]
 			{
-				sycl::ext::intel::device_ptr<const HostSizeType> thresholds_ptr_casted(thresholds_ptr);
-				sycl::ext::intel::device_ptr<const Chunk> ibfData_ptr_casted(ibfData_ptr);
+				InterfaceToIBFData ibfData = InterfaceToIBFPipe::read();
+
+				sycl::ext::intel::device_ptr<const HostSizeType> thresholds_ptr_casted(ibfData.thresholds_ptr);
+				sycl::ext::intel::device_ptr<const Chunk> ibfData_ptr_casted(ibfData.ibfData_ptr);
 
 				HostSizeType thresholds[THRESHOLDS_CACHE_SIZE];
 
-				const HostSizeType thresholdsMaxIndex = maximalNumberOfMinimizers - minimalNumberOfMinimizers;
+				const HostSizeType thresholdsMaxIndex = ibfData.kData.maximalNumberOfMinimizers - ibfData.kData.minimalNumberOfMinimizers;
 
 				for (ushort i = 0; i <= thresholdsMaxIndex; i++)
 				{
 					thresholds[i] = thresholds_ptr_casted[i];
 				}
 
-				for (QueryIndex queryIndex = 0; queryIndex < numberOfQueries; queryIndex++)
+				for (QueryIndex queryIndex = 0; queryIndex < ibfData.kData.numberOfQueries; queryIndex++)
 				{
 					[[intel::fpga_register]] Counter counters[CHUNKS][CHUNK_BITS];
 
@@ -32,7 +34,7 @@
 
 						if (data.isLastElement)
 						{
-							threshold = getThreshold(localNumberOfHashes, minimalNumberOfMinimizers, maximalNumberOfMinimizers, thresholds);
+							threshold = getThreshold(localNumberOfHashes, ibfData.kData.minimalNumberOfMinimizers, ibfData.kData.maximalNumberOfMinimizers, thresholds);
 						}
 
 						HostSizeType binOffsets[HASH_COUNT];
@@ -40,7 +42,7 @@
 						#pragma unroll
 						for (unsigned char seedIndex = 0; seedIndex < HASH_COUNT; ++seedIndex)
 						{
-							binOffsets[seedIndex] = calculateBinIndex(data.hash, seedIndex, hashShift, binSize) * CHUNKS_PER_BIN;
+							binOffsets[seedIndex] = calculateBinIndex(data.hash, seedIndex, ibfData.kData.hashShift, ibfData.kData.binSize) * CHUNKS_PER_BIN;
 						}
 
 						for (unsigned char chunkIndex = 0; chunkIndex < CHUNKS; chunkIndex++)

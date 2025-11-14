@@ -1,11 +1,13 @@
 		handler.single_task<Distributor>([=]() [[intel::kernel_args_restrict]]
 		{
-			sycl::ext::intel::host_ptr<const char> queries_ptr_casted(queries_ptr);
-			sycl::ext::intel::host_ptr<const HostSizeType> querySizes_ptr_casted(querySizes_ptr);
+			InterfaceToDistributorData distributorData = InterfaceToDistributorPipe::read();
+
+			sycl::ext::intel::host_ptr<const char> queries_ptr_casted(distributorData.queries_ptr);
+			sycl::ext::intel::host_ptr<const HostSizeType> querySizes_ptr_casted(distributorData.querySizes_ptr);
 
 			size_t queries_ptr_index = 0;
 
-			for (size_t i = 0; i < numberOfQueries; i++)
+			for (size_t i = 0; i < distributorData.numberOfQueries; i++)
 			{
 				DistributorToMinimizerData data;
 				data.size = PrefetchingLSU::load(querySizes_ptr_casted + i);
