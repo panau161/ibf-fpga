@@ -95,23 +95,57 @@ using QueryIndex = ac_int<25, true>;
 
 using Chunk = ac_int<CHUNK_BITS, false>;
 
-using Minimizer = struct
+struct Minimizer
 {
 	Hash hash;
 	unsigned char position;
 };
 
-using DistributorToMinimizerData = struct
+struct DistributorToMinimizerData
 {
 	unsigned char size;
 	char query[MAX_QUERY_LENGTH];
 };
 
-using MinimizerToIBFData = struct //__attribute__((__packed__))
+struct MinimizerToIBFData
 {
 	bool isLastElement;
 	Hash hash;
 };
+
+struct InterfaceToDistributorData
+{
+	HostSizeType numberOfQueries;
+	char* queries_ptr;
+	HostSizeType* querySizes_ptr;
+};
+
+struct InterfaceToIBFData
+{
+	kernelData kData;
+	HostSizeType* thresholds_ptr;
+	Chunk* ibfData_ptr;
+};
+
+struct InterfaceToCollectorData
+{
+	HostSizeType numberOfQueries;
+	Chunk* result_ptr;
+};
+
+using InterfaceToDistributorPipe = sycl::pipe<class I2D, InterfaceToDistributorData, 1>;
+using InterfaceToMinimizerPipe = sycl::pipe<class I2M, HostSizeType, 1>;
+using InterfaceToIBFPipe = sycl::pipe<class I2IBF, InterfaceToIBFData, 1>;
+using InterfaceToCollectorPipe = sycl::pipe<class I2C, InterfaceToCollectorData, 1>;
+using CollectorToInterfacePipe = sycl::pipe<class C2I, bool, 1>;
+
+using DistributorPipes = fpga_tools::PipeArray<class DistributorPipe, DistributorToMinimizerData, 2, KERNEL_COPYS>;
+using MinimizerToIBFPipes = fpga_tools::PipeArray<class MinimizerToIBFPipe, MinimizerToIBFData, 25, KERNEL_COPYS>;
+using CollectorPipes = fpga_tools::PipeArray<class CollectorPipe, Chunk, 25, KERNEL_COPYS>;
+
+using PrefetchingLSU = sycl::ext::intel::lsu<sycl::ext::intel::prefetch<true>, sycl::ext::intel::statically_coalesce<false>>;
+
+constexpr size_t id = 0;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Function declarations

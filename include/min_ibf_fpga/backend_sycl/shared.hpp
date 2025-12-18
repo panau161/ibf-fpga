@@ -17,6 +17,20 @@
 #define HOST_SIZE_TYPE_BITS 64
 #define MAX_BUS_WIDTH 512
 
+#if __INTEL_LLVM_COMPILER < 20230100
+  #ifdef FPGA_EMULATOR
+  sycl::ext::intel::fpga_emulator_selector device_selector;
+  #else
+  sycl::ext::intel::fpga_selector device_selector;
+  #endif
+#else
+  #ifdef FPGA_EMULATOR
+  auto device_selector = sycl::ext::intel::fpga_emulator_selector_v;
+  #else
+  auto device_selector = sycl::ext::intel::fpga_selector_v;
+  #endif
+#endif
+
 namespace min_ibf_fpga::backend_sycl
 {
 
